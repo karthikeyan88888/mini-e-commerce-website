@@ -197,3 +197,58 @@ cd client && npm run build
 
 Developed for the college hackathon by the **NEXORO Engineering Team**.  
 All original product concepts, branding, and acoustic specifications are licensed under the MIT License.
+
+<img width="1535" height="778" alt="image" src="https://github.com/user-attachments/assets/62d4ba91-4565-47bf-af54-3be746f1412a" />
+
+
+
+<img width="1533" height="773" alt="image" src="https://github.com/user-attachments/assets/a4998bb7-d443-45ab-a909-7673ceecc248" />
+
+
+<img width="1535" height="776" alt="image" src="https://github.com/user-attachments/assets/acf4f98d-4671-491f-8535-5b7677cd00d7" />
+
+
+<img width="1533" height="772" alt="image" src="https://github.com/user-attachments/assets/973f22f1-0931-40cd-b5e5-ccd3caa4791d" />
+
+
+<img width="1532" height="777" alt="image" src="https://github.com/user-attachments/assets/1aa00f89-9a5b-4514-970e-130ba28ad0ce" />
+
+
+<img width="1535" height="780" alt="image" src="https://github.com/user-attachments/assets/a9473e7b-5dc6-462c-9c30-2963cb09d8a3" />
+
+
+<img width="1535" height="775" alt="image" src="https://github.com/user-attachments/assets/ab7a9553-bf26-4a90-8581-488e3d6a4a4b" />
+
+
+<img width="1535" height="776" alt="image" src="https://github.com/user-attachments/assets/1137184e-8964-45df-88e2-c4ded5552959" />
+
+
+<img width="1535" height="775" alt="image" src="https://github.com/user-attachments/assets/97d52e3e-c490-4661-9337-6427d36e4a18" />
+
+
+
+<img width="1533" height="776" alt="image" src="https://github.com/user-attachments/assets/d25c2b65-f0bd-498a-a1ac-0857c2dad8e8" />
+
+
+
+<img width="1535" height="780" alt="image" src="https://github.com/user-attachments/assets/22925e68-3978-422f-b194-19d0f329273b" />
+
+
+
+<img width="1530" height="773" alt="image" src="https://github.com/user-attachments/assets/0407a2f7-3347-4f93-868c-591a1c24cd60" />
+
+
+
+<img width="1535" height="770" alt="image" src="https://github.com/user-attachments/assets/0b5e4f9c-4d2b-4267-8957-13bab2c20359" />
+
+
+
+
+
+
+
+
+
+
+
+
