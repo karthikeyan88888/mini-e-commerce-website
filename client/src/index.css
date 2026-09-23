@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #070707;
+    --bg-graphite: #111214;
+    --bg-charcoal: #1A1C1F;
+    --accent-copper: #C8834A;
+    --accent-champagne: #E5B98A;
+    --text-primary: #FFFFFF;
+    --text-secondary: rgba(255, 255, 255, 0.65);
+  }
+
+  body {
+    background-color: #070707;
+    color: #FFFFFF;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.025em;
+  }
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #070707;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #25282d;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #C8834A;
+}
+
+/* Glassmorphism restrained utilities */
+.glass-subtle {
+  background: rgba(17, 18, 20, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.copper-border-glow {
+  border: 1px solid rgba(200, 131, 74, 0.35);
+  box-shadow: 0 0 20px rgba(200, 131, 74, 0.12);
+}
+
+.copper-gradient-text {
+  background: linear-gradient(135deg, #FFFFFF 30%, #E5B98A 70%, #C8834A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

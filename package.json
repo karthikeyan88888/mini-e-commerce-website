@@ -1,0 +1,16 @@
+{
+  "name": "nexoro-monorepo",
+  "version": "1.0.0",
+  "description": "NEXORO — Precision Engineered E-Commerce Platform",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build": "cd server && npm run build && cd ../client && npm run build",
+    "seed": "cd server && npm run seed"
+  },
+  "keywords": ["nexoro", "ecommerce", "audio", "fastify", "react", "vite", "prisma"],
+  "author": "NEXORO Team",
+  "license": "MIT"
+}
