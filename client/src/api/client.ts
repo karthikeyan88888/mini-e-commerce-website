@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+// Production: VITE_API_URL points to the deployed backend (e.g. https://nexoro-api.vercel.app/api)
+// Development: Falls back to '/api' which Vite proxy forwards to localhost:5000
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
