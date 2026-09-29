@@ -6,12 +6,14 @@ import { requireAdmin } from '../../middleware/auth.js';
 const productSchema = z.object({
   name: z.string().min(2, 'Product name must be at least 2 characters'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
-  category: z.string().min(2, 'Category is required'),
+  category: z.enum(['HEADPHONES', 'EARBUDS'], {
+    errorMap: () => ({ message: 'Category must be either HEADPHONES or EARBUDS' }),
+  }),
   price: z.number().positive('Price must be greater than zero'),
   imageUrl: z.string().min(1, 'Image URL is required'),
   stock: z.number().int().min(0, 'Stock cannot be negative'),
   sku: z.string().min(3, 'SKU must be at least 3 characters'),
-  status: z.enum(['ACTIVE', 'INACTIVE']).optional().default('ACTIVE'),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']).optional().default('ACTIVE'),
   rating: z.number().min(1).max(5).optional().default(4.9),
   specs: z.string().optional(),
 });
@@ -35,7 +37,12 @@ export async function productRoutes(fastify: FastifyInstance) {
       }
 
       if (query.category && query.category.toUpperCase() !== 'ALL') {
-        where.category = query.category.toUpperCase();
+        const cat = query.category.toUpperCase();
+        if (cat === 'WIRELESS EARBUDS' || cat === 'EARBUDS' || cat === 'TWS' || cat === 'WIRELESS_EARBUDS') {
+          where.category = 'EARBUDS';
+        } else {
+          where.category = cat;
+        }
       }
 
       if (query.search && query.search.trim() !== '') {
@@ -125,8 +132,9 @@ export async function productRoutes(fastify: FastifyInstance) {
     try {
       const parsed = productSchema.safeParse(request.body);
       if (!parsed.success) {
+        const issues = parsed.error.issues.map((i) => `${i.path.join('.') || 'field'}: ${i.message}`).join('; ');
         return reply.status(400).send({
-          error: 'Validation failed',
+          error: `Validation failed: ${issues}`,
           details: parsed.error.format(),
         });
       }
@@ -136,7 +144,7 @@ export async function productRoutes(fastify: FastifyInstance) {
       });
 
       if (existingSku) {
-        return reply.status(409).send({ error: 'Product with this SKU already exists' });
+        return reply.status(409).send({ error: `Product with SKU "${parsed.data.sku}" already exists` });
       }
 
       const product = await prisma.product.create({
@@ -156,8 +164,9 @@ export async function productRoutes(fastify: FastifyInstance) {
       const { id } = request.params;
       const parsed = productSchema.partial().safeParse(request.body);
       if (!parsed.success) {
+        const issues = parsed.error.issues.map((i) => `${i.path.join('.') || 'field'}: ${i.message}`).join('; ');
         return reply.status(400).send({
-          error: 'Validation failed',
+          error: `Validation failed: ${issues}`,
           details: parsed.error.format(),
         });
       }
@@ -172,7 +181,7 @@ export async function productRoutes(fastify: FastifyInstance) {
           where: { sku: parsed.data.sku },
         });
         if (skuConflict) {
-          return reply.status(409).send({ error: 'Another product with this SKU already exists' });
+          return reply.status(409).send({ error: `Another product with SKU "${parsed.data.sku}" already exists` });
         }
       }
 
@@ -204,16 +213,17 @@ export async function productRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ error: 'Product not found' });
       }
 
-      // If product has been ordered in historical orders, mark INACTIVE to preserve records
+      // If product has been ordered in historical orders, mark ARCHIVED to preserve records
       if (product.orderItems.length > 0) {
-        const deactivated = await prisma.product.update({
+        const archived = await prisma.product.update({
           where: { id },
-          data: { status: 'INACTIVE' },
+          data: { status: 'ARCHIVED' },
         });
 
         return reply.send({
-          message: 'Product is referenced in previous orders. Safely marked as INACTIVE to preserve order history.',
-          product: deactivated,
+          message: `Product "${product.name}" is referenced in historical orders. Safely marked as ARCHIVED to protect order receipts.`,
+          product: archived,
+          archived: true,
           deactivated: true,
         });
       }
@@ -222,7 +232,7 @@ export async function productRoutes(fastify: FastifyInstance) {
       await prisma.cartItem.deleteMany({ where: { productId: id } });
       await prisma.product.delete({ where: { id } });
 
-      return reply.send({ message: 'Product removed from catalogue permanently', deleted: true });
+      return reply.send({ message: `Product "${product.name}" removed from catalogue permanently`, deleted: true });
     } catch (err: any) {
       request.log.error(err);
       return reply.status(500).send({ error: 'Failed to delete product' });

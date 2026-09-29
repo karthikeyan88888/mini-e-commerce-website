@@ -14,10 +14,20 @@ import {
   Layers,
   Clock,
   Box,
+  RotateCw,
+  Palette,
+  Cpu,
+  Film,
 } from 'lucide-react';
 import { Product } from '../types';
 import { StockBadge } from '../components/StatusBadge';
 import { ProductCard } from '../components/ProductCard';
+import { Product360Viewer } from '../components/Product360Viewer';
+import { ProductColorExplorer } from '../components/ProductColorExplorer';
+import { ProductEngineeringHotspots } from '../components/ProductEngineeringHotspots';
+import { ProductCinematicLauncher } from '../components/ProductCinematicLauncher';
+import { getProductMechanic, getBadgeInfo } from '../utils/productMechanics';
+import { getProductImageUrl, getCategoryFallback } from '../utils/productImages';
 import { useCart } from '../context/CartContext';
 import { api } from '../api/client';
 
@@ -41,6 +51,7 @@ export const ProductDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'specifications' | 'availability'>('overview');
   const [is3DModalOpen, setIs3DModalOpen] = useState(false);
+  const [is360ModalOpen, setIs360ModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -106,6 +117,17 @@ export const ProductDetailPage: React.FC = () => {
     );
   }
 
+  const mechanic = getProductMechanic(product);
+  const badgeInfo = getBadgeInfo(mechanic);
+  const displayCategory = product.category === 'EARBUDS' ? 'WIRELESS EARBUDS' : product.category;
+  const canonicalImageUrl = getProductImageUrl(product);
+  const resolvedModelUrl = product.modelUrl || (
+    product.name.toLowerCase().includes('halo x1') ? '/models/nexoro-halo-x1.glb' :
+    product.name.toLowerCase().includes('apex') ? '/models/nexoro-apex-pro.glb' :
+    product.name.toLowerCase().includes('vector') ? '/models/nexoro-vector-studio.glb' :
+    null
+  );
+
   // Parse specifications
   let specsObj: Record<string, string> = {};
   if (product.specs) {
@@ -124,7 +146,7 @@ export const ProductDetailPage: React.FC = () => {
       <div className="mb-8">
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/60 hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/60 hover:text-white transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 text-copper" />
           <span>BACK TO COLLECTION</span>
@@ -135,20 +157,27 @@ export const ProductDetailPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-14 items-start">
         {/* LEFT: Product Media */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="relative aspect-square sm:aspect-[4/3] lg:aspect-square rounded-xl overflow-hidden bg-[#0d0e12] border border-white/[0.08] shadow-2xl">
+          <div className="relative aspect-square sm:aspect-[4/3] lg:aspect-square rounded-2xl overflow-hidden bg-[#0d0e12] border border-white/[0.08] shadow-2xl">
             <img
-              src={product.imageUrl}
+              src={canonicalImageUrl}
               alt={product.name}
               className="w-full h-full object-cover object-center"
+              onError={(e) => {
+                const target = e.currentTarget;
+                const fallback = getCategoryFallback(product.category);
+                if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                  target.src = fallback;
+                }
+              }}
             />
             {/* Overlay badges */}
             <div className="absolute top-4 left-4 z-10">
               <StockBadge stock={product.stock} />
             </div>
-            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-              {product.has3DModel && (
-                <span className="bg-copper/25 backdrop-blur-md px-2.5 py-1 rounded text-xs font-mono font-black text-copper tracking-wider border border-copper/50">
-                  3D INSPECTABLE
+            <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
+              {badgeInfo && (
+                <span className={`backdrop-blur-md px-3 py-1 rounded text-xs font-mono font-black tracking-wider border shadow-md ${badgeInfo.badgeClass}`}>
+                  [{badgeInfo.label}]
                 </span>
               )}
               <div className="bg-black/80 backdrop-blur-md px-3 py-1 rounded text-xs font-mono font-bold text-white/90 uppercase border border-white/10">
@@ -157,28 +186,57 @@ export const ProductDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* VIEW IN 3D Button (Only rendered when product has 3D model) */}
-          {product.has3DModel && product.modelUrl && (
-            <button
-              onClick={() => setIs3DModalOpen(true)}
-              className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-[#111318] via-[#161822] to-[#111318] hover:from-[#191c28] hover:to-[#191c28] border border-copper/40 hover:border-copper text-white text-xs font-bold font-mono tracking-widest uppercase flex items-center justify-center gap-3 transition-all shadow-xl shadow-black/60 group"
-            >
-              <Box className="w-4 h-4 text-copper group-hover:scale-110 transition-transform" />
-              <span>VIEW IN 3D</span>
-              <span className="text-[10px] text-copper/80 font-normal ml-1">
-                (Interactive Studio)
-              </span>
-            </button>
-          )}
+          {/* Interactive Feature Action Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {mechanic === '360_VIEW' && (
+              <button
+                onClick={() => setIs360ModalOpen(true)}
+                className="col-span-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-cyan-950/40 via-cyan-900/30 to-cyan-950/40 hover:from-cyan-900/50 hover:to-cyan-900/50 border border-cyan-500/50 hover:border-cyan-400 text-white text-xs font-bold font-mono tracking-widest uppercase flex items-center justify-center gap-3 transition-all shadow-xl shadow-cyan-950/40 group cursor-pointer"
+              >
+                <RotateCw className="w-4 h-4 text-cyan-400 group-hover:rotate-180 transition-transform duration-500" />
+                <span>LAUNCH 360° INTERACTIVE VIEW</span>
+              </button>
+            )}
+
+            {mechanic === 'CINEMATIC' && (
+              <div className="col-span-full">
+                <ProductCinematicLauncher
+                  productName={product.name}
+                  isEarbuds={product.category === 'EARBUDS' || product.name.toLowerCase().includes('arc')}
+                />
+              </div>
+            )}
+
+            {/* VIEW IN 3D Button (When 3D model GLB exists) */}
+            {product.has3DModel && product.modelUrl && (
+              <button
+                onClick={() => setIs3DModalOpen(true)}
+                className="py-3 px-4 rounded-xl bg-[#111318] hover:bg-[#161822] border border-copper/40 hover:border-copper text-white text-xs font-bold font-mono tracking-widest uppercase flex items-center justify-center gap-2.5 transition-all shadow-lg group cursor-pointer"
+              >
+                <Box className="w-4 h-4 text-copper group-hover:scale-110 transition-transform" />
+                <span>INSPECT 3D MODEL</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* RIGHT: Details & Purchase */}
         <div className="lg:col-span-5 space-y-6">
           {/* Category */}
           <div>
-            <span className="text-[11px] font-mono tracking-[0.25em] text-copper uppercase font-bold block mb-1">
-              {product.category}
-            </span>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-[11px] font-mono tracking-[0.25em] text-copper uppercase font-bold">
+                {displayCategory}
+              </span>
+              {badgeInfo && (
+                <>
+                  <span className="text-white/20">&bull;</span>
+                  <span className="text-[10px] font-mono text-white/50 tracking-wider">
+                    {badgeInfo.label} ENABLED
+                  </span>
+                </>
+              )}
+            </div>
             <h1 className="text-3xl sm:text-4xl font-black font-headline tracking-tight text-white leading-tight">
               {product.name}
             </h1>
@@ -306,15 +364,52 @@ export const ProductDetailPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Interactive Experience Showcase Section (Based on Product Mechanic) */}
+      <div className="mt-16 space-y-12">
+        {mechanic === '360_VIEW' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+              <span className="text-[10px] font-mono tracking-[0.25em] text-cyan-400 uppercase font-bold">
+                INTERACTIVE ROTATIONAL STUDIO
+              </span>
+              <span className="text-[11px] font-mono text-white/40">
+                DRAG TO ROTATE &bull; SCROLL TO ZOOM
+              </span>
+            </div>
+            <Product360Viewer
+              imageUrl={canonicalImageUrl}
+              productName={product.name}
+              isInline={true}
+              modelUrl={resolvedModelUrl}
+              category={product.category}
+            />
+          </div>
+        )}
+
+        {mechanic === 'COLOR_LAB' && (
+          <ProductColorExplorer
+            baseImageUrl={canonicalImageUrl}
+            productName={product.name}
+          />
+        )}
+
+        {mechanic === 'ENGINEERING' && (
+          <ProductEngineeringHotspots
+            imageUrl={canonicalImageUrl}
+            productName={product.name}
+          />
+        )}
+      </div>
+
       {/* Tabs Below: Overview / Specifications / Availability */}
-      <div className="mt-20 pt-10 border-t border-white/[0.08]">
+      <div className="mt-16 pt-10 border-t border-white/[0.08]">
         {/* Tab Headers */}
         <div className="flex items-center gap-3 border-b border-white/[0.08] pb-4 mb-8">
           {(['overview', 'specifications', 'availability'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === tab
                   ? 'bg-copper text-black shadow-md shadow-copper/20'
                   : 'text-white/60 hover:text-white bg-white/[0.03] border border-white/[0.06]'
@@ -375,29 +470,50 @@ export const ProductDetailPage: React.FC = () => {
         )}
       </div>
 
-      {/* Related Products */}
+      {/* COMPLETE YOUR NEXORO SETUP */}
       {related.length > 0 && (
         <div className="mt-20 pt-16 border-t border-white/[0.08]">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
-              <span className="text-[10px] font-mono tracking-[0.25em] text-copper uppercase font-bold block mb-1">
-                COMPATIBLE HARDWARE
-              </span>
-              <h2 className="text-2xl font-bold font-headline text-white">
-                RELATED SYSTEMS
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[10px] font-mono font-bold text-copper uppercase tracking-widest mb-2">
+                <span className="w-1.5 h-1.5 rounded-[1px] bg-copper shadow-[0_0_6px_#C8834A]" />
+                <span>ECOSYSTEM COMPATIBILITY</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black font-headline text-white">
+                COMPLETE YOUR NEXORO SETUP
               </h2>
+              <p className="text-xs text-white/50 mt-1 font-mono">
+                {product.category === 'HEADPHONES'
+                  ? 'Recommended true wireless earbuds for mobile on-the-go acoustic continuity'
+                  : 'Recommended studio reference over-ear headphones for critical desktop listening'}
+              </p>
             </div>
-            <Link to="/catalog" className="text-xs font-bold text-copper hover:underline uppercase font-mono">
-              VIEW FULL CATALOGUE &rarr;
+            <Link to="/catalog" className="text-xs font-bold text-copper hover:underline uppercase font-mono self-start sm:self-auto">
+              EXPLORE FULL CATALOGUE &rarr;
             </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {related.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+            {related
+              .filter((p) => p.status === 'ACTIVE' && (p.category === 'HEADPHONES' || p.category === 'EARBUDS'))
+              .slice(0, 3)
+              .map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
           </div>
         </div>
+      )}
+
+      {/* Interactive 360 Viewer Modal */}
+      {mechanic === '360_VIEW' && is360ModalOpen && (
+        <Product360Viewer
+          imageUrl={canonicalImageUrl}
+          productName={product.name}
+          isOpen={is360ModalOpen}
+          onClose={() => setIs360ModalOpen(false)}
+          modelUrl={resolvedModelUrl}
+          category={product.category}
+        />
       )}
 
       {/* Interactive 3D Product Viewer Modal */}

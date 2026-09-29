@@ -4,6 +4,7 @@ import { CheckCircle2, ArrowRight, Package, Truck, Calendar, MapPin } from 'luci
 import { Order } from '../types';
 import { OrderStatusBadge } from '../components/StatusBadge';
 import { api } from '../api/client';
+import { getProductImageUrl, getCategoryFallback } from '../utils/productImages';
 
 export const OrderConfirmationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -130,9 +131,16 @@ export const OrderConfirmationPage: React.FC = () => {
             >
               <div className="flex items-center gap-4">
                 <img
-                  src={item.product?.imageUrl}
+                  src={getProductImageUrl(item.product)}
                   alt={item.product?.name || 'Product'}
                   className="w-14 h-14 rounded-lg object-cover bg-black/50"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    const fallback = getCategoryFallback(item.product?.category);
+                    if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                      target.src = fallback;
+                    }
+                  }}
                 />
                 <div>
                   <h4 className="text-sm font-semibold text-white font-headline">

@@ -7,37 +7,48 @@ import { api } from '../api/client';
 
 export const CatalogPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialCategory = searchParams.get('category') || 'All';
+  const initialRawCategory = searchParams.get('category') || 'ALL';
+  const normalizeCategory = (cat: string) => {
+    const upper = cat.toUpperCase();
+    if (upper === 'EARBUDS' || upper === 'WIRELESS EARBUDS' || upper === 'TWS') return 'WIRELESS EARBUDS';
+    if (upper === 'HEADPHONES') return 'HEADPHONES';
+    return 'ALL';
+  };
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>(['All', 'HEADPHONES', 'IEM', 'AMPLIFICATION', 'ACCESSORIES', 'ACOUSTICS']);
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-  const [searchQuery, setSearchQuery] = useState('');
+  const categories = ['ALL', 'HEADPHONES', 'WIRELESS EARBUDS'];
+  const [selectedCategory, setSelectedCategory] = useState(normalizeCategory(initialRawCategory));
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [stockFilter, setStockFilter] = useState('all');
   const [sortOption, setSortOption] = useState('newest');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const cat = searchParams.get('category');
-    setSelectedCategory(cat || 'All');
+    if (cat) {
+      setSelectedCategory(normalizeCategory(cat));
+    }
+    const q = searchParams.get('search');
+    if (q !== null) {
+      setSearchQuery(q);
+    }
   }, [searchParams]);
 
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
       const params: Record<string, string> = {};
-      if (selectedCategory !== 'All') params.category = selectedCategory;
+      if (selectedCategory === 'HEADPHONES') {
+        params.category = 'HEADPHONES';
+      } else if (selectedCategory === 'WIRELESS EARBUDS') {
+        params.category = 'EARBUDS';
+      }
       if (searchQuery.trim()) params.search = searchQuery.trim();
       if (stockFilter !== 'all') params.stockStatus = stockFilter;
       if (sortOption !== 'newest') params.sort = sortOption;
 
       const res = await api.get('/products', { params });
       setProducts(res.data.products || []);
-      if (res.data.categories && res.data.categories.length > 0) {
-        // Ensure standard unique categories
-        const dynamicCats = ['All', ...Array.from(new Set(res.data.categories as string[]))];
-        setCategories(dynamicCats);
-      }
     } catch (err) {
       console.error('Failed to fetch products', err);
     } finally {
@@ -56,8 +67,10 @@ export const CatalogPage: React.FC = () => {
 
   const handleCategoryChange = (cat: string) => {
     setSelectedCategory(cat);
-    if (cat === 'All') {
+    if (cat === 'ALL') {
       searchParams.delete('category');
+    } else if (cat === 'WIRELESS EARBUDS') {
+      searchParams.set('category', 'WIRELESS EARBUDS');
     } else {
       searchParams.set('category', cat);
     }
@@ -69,14 +82,14 @@ export const CatalogPage: React.FC = () => {
       {/* Editorial Header */}
       <div className="mb-10">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono font-semibold text-copper mb-3">
-          <span className="w-1.5 h-1.5 rounded-[1px] bg-copper" />
-          <span>SYSTEM CATALOGUE // {selectedCategory.toUpperCase()}</span>
+          <span className="w-1.5 h-1.5 rounded-[1px] bg-copper shadow-[0_0_6px_#C8834A]" />
+          <span>SYSTEM CATALOGUE // {selectedCategory}</span>
         </div>
         <h1 className="text-3xl sm:text-5xl font-extrabold font-headline tracking-tight text-white">
           THE NEXORO AUDIO ECOSYSTEM
         </h1>
         <p className="text-xs sm:text-sm text-white/50 mt-2 max-w-xl leading-relaxed">
-          Explore our complete catalogue of precision-tuned planar headphones, balanced amplification matrices, and bespoke acoustic treatments.
+          Explore our complete catalogue of precision-tuned planar headphones and active true wireless stereo earbuds.
         </p>
       </div>
 
@@ -194,12 +207,13 @@ export const CatalogPage: React.FC = () => {
           </p>
           <button
             onClick={() => {
-              setSelectedCategory('All');
+              setSelectedCategory('ALL');
               setSearchQuery('');
               setStockFilter('all');
               setSortOption('newest');
+              setSearchParams({});
             }}
-            className="px-6 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold tracking-wider rounded-xl transition-colors uppercase"
+            className="px-6 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold tracking-wider rounded-xl transition-colors uppercase cursor-pointer"
           >
             RESET ALL FILTERS
           </button>

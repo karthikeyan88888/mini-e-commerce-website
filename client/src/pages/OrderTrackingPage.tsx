@@ -5,6 +5,7 @@ import { Order } from '../types';
 import { OrderStatusBadge } from '../components/StatusBadge';
 import { OrderTimeline } from '../components/OrderTimeline';
 import { api } from '../api/client';
+import { getProductImageUrl, getCategoryFallback } from '../utils/productImages';
 
 export const OrderTrackingPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -108,9 +109,16 @@ export const OrderTrackingPage: React.FC = () => {
               <div key={item.id} className="py-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <img
-                    src={item.product?.imageUrl}
+                    src={getProductImageUrl(item.product)}
                     alt={item.product?.name}
                     className="w-14 h-14 rounded-lg object-cover bg-black/50 border border-white/10"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      const fallback = getCategoryFallback(item.product?.category);
+                      if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                        target.src = fallback;
+                      }
+                    }}
                   />
                   <div>
                     <h4 className="text-xs font-bold text-white font-headline">{item.product?.name}</h4>

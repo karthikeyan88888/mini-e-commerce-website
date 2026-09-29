@@ -2,17 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Volume2, ShieldCheck, Zap, Headphones, Cpu, Layers, Disc, Radio, Sliders, MessageSquare, LifeBuoy, Clock, CheckCircle2 } from 'lucide-react';
 import { HeroCanvas } from '../components/HeroCanvas';
+import { CollectionTransition } from '../components/CollectionTransition';
+import { ArcTwsCanvas } from '../components/ArcTwsCanvas';
 import { ProductCard } from '../components/ProductCard';
 import { Product } from '../types';
 import { api } from '../api/client';
 
 export const HomePage: React.FC = () => {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [headphoneProducts, setHeadphoneProducts] = useState<Product[]>([]);
+  const [earbudProducts, setEarbudProducts] = useState<Product[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [newArrivals, setNewArrivals] = useState<Product[]>([]);
-  const [signatureAudio, setSignatureAudio] = useState<Product[]>([]);
-  const [accessories, setAccessories] = useState<Product[]>([]);
-  const [acoustics, setAcoustics] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -22,23 +22,16 @@ export const HomePage: React.FC = () => {
         const all: Product[] = res.data.products || [];
         setAllProducts(all);
 
-        // Featured: flagship headphones & high-end amp
+        // Featured products (top flagships)
         setFeaturedProducts(all.slice(0, 4));
 
-        // New Arrivals: newest 4 items
-        setNewArrivals(all.slice(4, 8));
+        // Headphones
+        const hp = all.filter((p) => p.category === 'HEADPHONES');
+        setHeadphoneProducts(hp);
 
-        // Signature Audio: Headphones & IEM
-        const sig = all.filter((p) => p.category === 'HEADPHONES' || p.category === 'IEM');
-        setSignatureAudio(sig.slice(0, 4));
-
-        // Accessories
-        const acc = all.filter((p) => p.category === 'ACCESSORIES');
-        setAccessories(acc.slice(0, 4));
-
-        // Acoustics
-        const aco = all.filter((p) => p.category === 'ACOUSTICS');
-        setAcoustics(aco.slice(0, 4));
+        // Wireless Earbuds
+        const eb = all.filter((p) => p.category === 'EARBUDS' || p.category === 'WIRELESS EARBUDS');
+        setEarbudProducts(eb);
       })
       .catch((err) => {
         console.error('Failed to load products for storefront', err);
@@ -48,12 +41,22 @@ export const HomePage: React.FC = () => {
       });
   }, []);
 
+  const arcTwsProduct = allProducts.find(
+    (p) => p.sku === 'NXR-ARC-01' || p.name.toLowerCase().includes('arc tws')
+  );
+
   return (
     <div className="bg-[#070707] text-white selection:bg-copper selection:text-black">
-      {/* 1. Signature 300-Frame Scroll Hero */}
+      {/* 1. Signature 300-Frame Headphone Scroll Hero */}
       <HeroCanvas />
 
-      {/* 2. SECTION: FEATURED COLLECTION */}
+      {/* 2. Short Cinematic NEXORO Collection Transition */}
+      <CollectionTransition />
+
+      {/* 3. Signature 240-Frame ARC TWS Wireless Earbuds Scroll Hero */}
+      <ArcTwsCanvas product={arcTwsProduct} />
+
+      {/* 4. SECTION: FEATURED HARDWARE */}
       <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
@@ -65,12 +68,12 @@ export const HomePage: React.FC = () => {
               FEATURED HARDWARE.
             </h2>
             <p className="text-xs sm:text-sm text-white/50 mt-2 max-w-lg leading-relaxed">
-              Engineered with zero-tolerance beryllium diaphragms and pure Class-A linear amplification.
+              Engineered with zero-tolerance beryllium diaphragms and pure planar magnetic transducer arrays.
             </p>
           </div>
           <Link
             to="/catalog"
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-copper hover:text-copper-light transition-colors group"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-copper hover:text-copper-light transition-colors group cursor-pointer"
           >
             <span>EXPLORE ENTIRE CATALOGUE ({allProducts.length} SYSTEMS)</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -80,7 +83,7 @@ export const HomePage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {isLoading
             ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="aspect-[3/4] rounded-lg bg-white/5 animate-pulse" />
+                <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 animate-pulse" />
               ))
             : featuredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
@@ -88,144 +91,106 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. SECTION: NEW ARRIVALS */}
+      {/* 5. SECTION: HEADPHONES DIVISION */}
       <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-mono font-bold text-copper uppercase tracking-widest mb-3">
-              <span className="w-1.5 h-1.5 rounded-[1px] bg-copper shadow-[0_0_6px_#C8834A]" />
-              <span>FRESH RELEASES</span>
+              <Headphones className="w-3.5 h-3.5 text-copper" />
+              <span>TRANSDUCER ARCHITECTURE</span>
             </div>
             <h2 className="text-3xl sm:text-5xl font-black font-headline tracking-tight text-white">
-              NEW ARRIVALS.
+              HEADPHONES.
             </h2>
             <p className="text-xs sm:text-sm text-white/50 mt-2 max-w-lg leading-relaxed">
-              The latest additions to the NEXORO acoustic ecosystem, ready for immediate priority dispatch.
+              Open-back planar magnetics, closed-back monitoring, and flagship over-ear listening systems.
             </p>
           </div>
           <Link
-            to="/catalog?sort=newest"
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-copper hover:text-copper-light transition-colors group"
+            to="/catalog?category=HEADPHONES"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-copper hover:text-copper-light transition-colors group cursor-pointer"
           >
-            <span>VIEW ALL NEW RELEASES</span>
+            <span>VIEW ALL HEADPHONES ({headphoneProducts.length})</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading
-            ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="aspect-[3/4] rounded-lg bg-white/5 animate-pulse" />
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 animate-pulse" />
               ))
-            : newArrivals.map((product) => (
+            : headphoneProducts.slice(0, 3).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
         </div>
       </section>
 
-      {/* 4. SECTION: SIGNATURE AUDIO */}
+      {/* 6. SECTION: WIRELESS EARBUDS DIVISION */}
       <section className="py-24 bg-[#0a0b0e] border-y border-white/[0.08] px-6 md:px-12">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
               <span className="text-[10px] font-mono tracking-[0.25em] text-copper uppercase font-bold block mb-2">
-                TRANSDUCER DIVISIONS
+                MICRO-ELECTROACOUSTICS
               </span>
               <h2 className="text-3xl sm:text-5xl font-black font-headline tracking-tight text-white">
-                SIGNATURE AUDIO.
+                WIRELESS EARBUDS.
               </h2>
               <p className="text-xs sm:text-sm text-white/50 mt-2 max-w-lg leading-relaxed">
-                Open-back planar magnetics and multi-balanced-armature in-ear monitors tuned for absolute linear fidelity.
+                Liquid crystal polymer drivers, Bluetooth 5.4 LE Audio, and active noise suppression in sculptured obsidian cradles.
               </p>
             </div>
             <Link
-              to="/catalog?category=HEADPHONES"
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-copper hover:text-copper-light transition-colors group"
+              to="/catalog?category=WIRELESS+EARBUDS"
+              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-copper hover:text-copper-light transition-colors group cursor-pointer"
             >
-              <span>EXPLORE HEADPHONES & IEMs</span>
+              <span>EXPLORE ALL WIRELESS EARBUDS ({earbudProducts.length})</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading
-              ? Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="aspect-[3/4] rounded-lg bg-white/5 animate-pulse" />
+              ? Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 animate-pulse" />
                 ))
-              : signatureAudio.map((product) => (
+              : earbudProducts.slice(0, 3).map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
           </div>
         </div>
       </section>
 
-      {/* 5. SECTION: BESPOKE ACCESSORIES */}
-      <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-mono font-bold text-copper uppercase tracking-widest mb-3">
-              <span className="w-1.5 h-1.5 rounded-[1px] bg-copper shadow-[0_0_6px_#C8834A]" />
-              <span>CONDUCTOR & DOCKING</span>
+      {/* 7. SECTION: CURATED COLLECTIONS HERO CALLOUT */}
+      <section className="py-20 px-6 md:px-12 max-w-7xl mx-auto">
+        <div className="p-8 sm:p-14 rounded-3xl bg-gradient-to-r from-[#121318] via-[#161822] to-[#121318] border border-copper/30 flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative overflow-hidden shadow-2xl">
+          <div className="max-w-xl relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-copper/15 border border-copper/40 text-[10px] font-mono font-bold text-copper uppercase tracking-widest mb-3">
+              <Layers className="w-3.5 h-3.5 text-copper" />
+              <span>DEDICATED SERIES ARCHITECTURE</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-black font-headline tracking-tight text-white">
-              ACCESSORIES.
-            </h2>
-            <p className="text-xs sm:text-sm text-white/50 mt-2 max-w-lg leading-relaxed">
-              7N OCC monocrystalline copper cables, magnetic inductive stands, and carbon fiber travel shells.
+            <h3 className="text-2xl sm:text-4xl font-black font-headline tracking-tight text-white">
+              DISCOVER OUR FOUR CURATED COLLECTIONS.
+            </h3>
+            <p className="text-xs sm:text-sm text-white/60 mt-3 leading-relaxed">
+              Explore Flagship, Studio Reference, Everyday Ergonomics, and Luxury Artisan series organized by engineering intent.
             </p>
           </div>
-          <Link
-            to="/catalog?category=ACCESSORIES"
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-copper hover:text-copper-light transition-colors group"
-          >
-            <span>VIEW ALL ACCESSORIES</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {isLoading
-            ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="aspect-[3/4] rounded-lg bg-white/5 animate-pulse" />
-              ))
-            : accessories.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-        </div>
-      </section>
-
-      {/* 6. SECTION: ARCHITECTURAL ACOUSTICS */}
-      <section className="py-24 bg-[#0a0b0e] border-t border-white/[0.08] px-6 md:px-12">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-            <div>
-              <span className="text-[10px] font-mono tracking-[0.25em] text-copper uppercase font-bold block mb-2">
-                ROOM TUNING MATRICES
-              </span>
-              <h2 className="text-3xl sm:text-5xl font-black font-headline tracking-tight text-white">
-                ACOUSTICS.
-              </h2>
-              <p className="text-xs sm:text-sm text-white/50 mt-2 max-w-lg leading-relaxed">
-                Quadratic residue diffusers, velocity absorbers, and reference calibration kits for studio listening environments.
-              </p>
-            </div>
+          <div className="relative z-10 flex flex-wrap items-center gap-3">
             <Link
-              to="/catalog?category=ACOUSTICS"
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-copper hover:text-copper-light transition-colors group"
+              to="/collections"
+              className="px-7 py-4 bg-copper hover:bg-copper-hover text-black font-black text-xs tracking-widest uppercase rounded-xl shadow-xl shadow-copper/25 transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
             >
-              <span>VIEW ACOUSTIC SYSTEMS</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <span>EXPLORE COLLECTIONS</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {isLoading
-              ? Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="aspect-[3/4] rounded-lg bg-white/5 animate-pulse" />
-                ))
-              : acoustics.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
+            <Link
+              to="/catalog"
+              className="px-6 py-4 bg-white/5 hover:bg-white/10 text-white font-bold text-xs tracking-widest uppercase rounded-xl border border-white/10 transition-colors"
+            >
+              VIEW FULL SHOP
+            </Link>
           </div>
         </div>
       </section>

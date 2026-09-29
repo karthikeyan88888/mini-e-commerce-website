@@ -19,7 +19,9 @@ export async function inventoryRoutes(fastify: FastifyInstance) {
         category?: string;
       };
 
-      const where: any = {};
+      const where: any = {
+        status: 'ACTIVE',
+      };
 
       if (query.status === 'low') {
         where.stock = { gt: 0, lte: 5 };
@@ -29,8 +31,15 @@ export async function inventoryRoutes(fastify: FastifyInstance) {
         where.stock = { gt: 5 };
       }
 
-      if (query.category && query.category !== 'All') {
-        where.category = query.category;
+      if (query.category && query.category.toUpperCase() !== 'ALL') {
+        const cat = query.category.toUpperCase();
+        if (cat === 'WIRELESS EARBUDS' || cat === 'EARBUDS' || cat === 'TWS') {
+          where.category = 'EARBUDS';
+        } else if (cat === 'HEADPHONES') {
+          where.category = 'HEADPHONES';
+        } else {
+          where.category = cat;
+        }
       }
 
       if (query.search && query.search.trim() !== '') {
@@ -47,16 +56,18 @@ export async function inventoryRoutes(fastify: FastifyInstance) {
         orderBy: { stock: 'asc' }, // show lowest stock first by default
       });
 
-      // Quick summary metrics
-      const totalProducts = await prisma.product.count();
+      // Quick summary metrics (Active catalog only)
+      const totalProducts = await prisma.product.count({
+        where: { status: 'ACTIVE' },
+      });
       const lowStockCount = await prisma.product.count({
-        where: { stock: { gt: 0, lte: 5 } },
+        where: { stock: { gt: 0, lte: 5 }, status: 'ACTIVE' },
       });
       const outOfStockCount = await prisma.product.count({
-        where: { stock: 0 },
+        where: { stock: 0, status: 'ACTIVE' },
       });
       const inStockCount = await prisma.product.count({
-        where: { stock: { gt: 5 } },
+        where: { stock: { gt: 5 }, status: 'ACTIVE' },
       });
 
       return reply.send({

@@ -4,6 +4,7 @@ import { ShieldCheck, ArrowRight, Lock, CheckCircle2, Truck, CreditCard, ArrowLe
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
+import { getProductImageUrl, getCategoryFallback } from '../utils/productImages';
 
 export const CheckoutPage: React.FC = () => {
   const { cart, refreshCart } = useCart();
@@ -214,9 +215,16 @@ export const CheckoutPage: React.FC = () => {
                 <div key={item.id} className="py-3 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <img
-                      src={item.product?.imageUrl}
+                      src={getProductImageUrl(item.product)}
                       alt={item.product?.name}
                       className="w-12 h-12 rounded object-cover bg-black/40 border border-white/10"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        const fallback = getCategoryFallback(item.product?.category);
+                        if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                          target.src = fallback;
+                        }
+                      }}
                     />
                     <div>
                       <h4 className="text-xs font-bold text-white font-headline">{item.product?.name}</h4>

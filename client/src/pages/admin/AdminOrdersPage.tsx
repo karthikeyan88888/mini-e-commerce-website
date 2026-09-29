@@ -3,6 +3,7 @@ import { ShoppingBag, Search, Eye, Check, RefreshCw, X, MapPin, Truck } from 'lu
 import { Order, OrderStatus } from '../../types';
 import { OrderStatusBadge } from '../../components/StatusBadge';
 import { api } from '../../api/client';
+import { getProductImageUrl, getCategoryFallback } from '../../utils/productImages';
 
 export const AdminOrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -241,14 +242,28 @@ export const AdminOrdersPage: React.FC = () => {
                   >
                     <div className="flex items-center gap-3">
                       <img
-                        src={it.product?.imageUrl}
+                        src={getProductImageUrl(it.product)}
                         alt={it.product?.name || 'Hardware'}
                         className="w-12 h-12 rounded-lg object-cover bg-black/40"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          const fallback = getCategoryFallback(it.product?.category);
+                          if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                            target.src = fallback;
+                          }
+                        }}
                       />
                       <div>
-                        <h5 className="font-bold text-white font-headline">
-                          {it.product?.name || 'Acoustic Unit'}
-                        </h5>
+                        <div className="flex items-center gap-2">
+                          <h5 className="font-bold text-white font-headline">
+                            {it.product?.name || 'Acoustic Unit'}
+                          </h5>
+                          {it.product && (it.product.status === 'ARCHIVED' || it.product.status === 'INACTIVE' || (it.product.category !== 'HEADPHONES' && it.product.category !== 'EARBUDS')) && (
+                            <span className="px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-800/50 text-[9px] font-mono font-bold text-amber-300">
+                              ARCHIVED PRODUCT
+                            </span>
+                          )}
+                        </div>
                         <span className="text-copper font-mono text-[11px]">
                           ${it.priceAtPurchase.toFixed(2)} &times; {it.quantity}
                         </span>

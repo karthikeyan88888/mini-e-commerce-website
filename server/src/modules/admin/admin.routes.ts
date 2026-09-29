@@ -28,6 +28,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
       const lowStockCount = await prisma.product.count({
         where: { stock: { lte: 5 }, status: 'ACTIVE' },
       });
+      const outOfStockCount = await prisma.product.count({
+        where: { stock: 0, status: 'ACTIVE' },
+      });
 
       // Recent Orders
       const recentOrders = await prisma.order.findMany({
@@ -49,9 +52,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Low Stock Products Alert
+      // Low Stock Products Alert (Active catalog only)
       const lowStockProducts = await prisma.product.findMany({
-        where: { stock: { lte: 5 } },
+        where: { stock: { lte: 5 }, status: 'ACTIVE' },
         orderBy: { stock: 'asc' },
         take: 5,
       });

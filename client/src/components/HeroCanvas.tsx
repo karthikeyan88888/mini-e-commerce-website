@@ -99,6 +99,17 @@ export const HeroCanvas: React.FC = () => {
     };
   }, []);
 
+  const [resizeTrigger, setResizeTrigger] = useState(0);
+
+  // Resize handling
+  useEffect(() => {
+    const handleResize = () => {
+      setResizeTrigger((prev) => prev + 1);
+    };
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Canvas drawing routine
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -114,7 +125,7 @@ export const HeroCanvas: React.FC = () => {
     // Find nearest loaded frame if current frame is loading
     let frameToRender = images[targetFrameIndex];
     if (!frameToRender) {
-      for (let offset = 1; offset < 25; offset++) {
+      for (let offset = 1; offset < 35; offset++) {
         if (images[targetFrameIndex - offset]) {
           frameToRender = images[targetFrameIndex - offset];
           break;
@@ -126,46 +137,45 @@ export const HeroCanvas: React.FC = () => {
       }
     }
 
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = canvas.clientWidth || window.innerWidth;
+    const height = canvas.clientHeight || window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
 
-    if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
+    // High-DPI backing buffer
+    const targetWidth = Math.round(width * dpr);
+    const targetHeight = Math.round(height * dpr);
+
+    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
     }
 
     ctx.save();
     ctx.scale(dpr, dpr);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
     ctx.fillStyle = '#070707';
     ctx.fillRect(0, 0, width, height);
 
     if (frameToRender && frameToRender.complete && frameToRender.naturalWidth > 0) {
-      const imgRatio = frameToRender.naturalWidth / frameToRender.naturalHeight;
-      const canvasRatio = width / height;
+      const imgWidth = frameToRender.naturalWidth;
+      const imgHeight = frameToRender.naturalHeight;
 
-      let drawWidth = width;
-      let drawHeight = height;
-      let offsetX = 0;
-      let offsetY = 0;
+      // COVER-style scaling: fill viewport width and height, preserving aspect ratio
+      const scale = Math.max(width / imgWidth, height / imgHeight);
+      const drawWidth = imgWidth * scale;
+      const drawHeight = imgHeight * scale;
 
-      if (canvasRatio > imgRatio) {
-        drawHeight = height * 0.92;
-        drawWidth = drawHeight * imgRatio;
-        offsetX = (width - drawWidth) / 2;
-        offsetY = (height - drawHeight) / 2;
-      } else {
-        drawWidth = width * 0.96;
-        drawHeight = drawWidth / imgRatio;
-        offsetX = (width - drawWidth) / 2;
-        offsetY = (height - drawHeight) / 2;
-      }
+      // Center frame precisely
+      const offsetX = (width - drawWidth) / 2;
+      const offsetY = (height - drawHeight) / 2;
 
       ctx.drawImage(frameToRender, offsetX, offsetY, drawWidth, drawHeight);
     }
 
     ctx.restore();
-  }, [scrollProgress, images]);
+  }, [scrollProgress, images, resizeTrigger]);
 
   // Story phases precisely synchronized with user requirements
   const phase1 = scrollProgress >= 0 && scrollProgress < 0.15;
@@ -188,19 +198,20 @@ export const HeroCanvas: React.FC = () => {
   };
 
   return (
-    <div ref={containerRef} className="relative h-[480vh] bg-[#070707] text-white">
-      {/* Sticky Fullscreen Canvas Viewport */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">
-        {/* Render Canvas */}
+    <div ref={containerRef} className="relative h-[480vh] w-full max-w-full bg-[#070707] text-white overflow-x-clip">
+      {/* Sticky Fullscreen Canvas Viewport (100vw / 100svh / 100vh fallback) */}
+      <div className="sticky top-0 w-full w-screen max-w-full h-screen h-[100svh] min-h-[100vh] overflow-hidden flex items-center justify-center">
+        {/* Render Canvas: full-bleed cover display */}
         <canvas
           ref={canvasRef}
-          className="w-full h-full object-contain pointer-events-none transition-opacity duration-500"
+          className="w-full h-full block pointer-events-none transition-opacity duration-300"
+          style={{ width: '100%', height: '100%', display: 'block' }}
         />
 
         {/* Ambient radial glow subtle backdrop */}
         <div className="absolute inset-0 bg-radial-gradient from-copper/10 via-transparent to-transparent pointer-events-none opacity-30" />
 
-        {/* Narrative Overlays Container */}
+        {/* Narrative Overlays Container (Text is constrained for readability, canvas is NOT) */}
         <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6 sm:p-10 md:p-14 max-w-7xl mx-auto z-20">
           {/* Top Engineering Telemetry Bar */}
           <div className="flex items-center justify-between pt-16 sm:pt-14 pointer-events-auto">
@@ -223,35 +234,35 @@ export const HeroCanvas: React.FC = () => {
           </div>
 
           {/* Left-Aligned Story Text Area (Leaves Headphone Visually Center-Right & Dominant) */}
-          <div className="my-auto max-w-md lg:max-w-xl pointer-events-auto">
+          <div className="my-auto max-w-[85vw] sm:max-w-md lg:max-w-xl pointer-events-auto">
             {/* 0–15%: Hero Title */}
             <div
               className={`transition-all duration-700 ease-out ${
                 phase1 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8 pointer-events-none absolute'
               }`}
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[10px] font-mono font-bold text-copper uppercase tracking-widest mb-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[10px] font-mono font-bold text-copper uppercase tracking-widest mb-3 sm:mb-4">
                 <span className="w-1.5 h-1.5 rounded-[1px] bg-copper shadow-[0_0_6px_#C8834A]" />
                 <span>NEXORO ACOUSTICS</span>
               </div>
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black font-headline tracking-tighter leading-[0.95] text-white">
+              <h1 className="text-3xl sm:text-6xl lg:text-7xl font-black font-headline tracking-tighter leading-[0.95] text-white">
                 SOUND,<br />
                 <span className="copper-gradient-text">RE-ENGINEERED.</span>
               </h1>
-              <p className="mt-5 text-sm sm:text-base text-white/70 font-normal leading-relaxed max-w-md">
+              <p className="mt-3.5 sm:mt-5 text-xs sm:text-base text-white/70 font-normal leading-relaxed max-w-sm sm:max-w-md">
                 Acoustic precision engineered for effortless transient speed, master-grade planar resolution, and zero enclosure distortion.
               </p>
-              <div className="mt-8 flex flex-wrap items-center gap-4">
+              <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
                 <button
                   onClick={scrollToStore}
-                  className="px-7 py-3.5 bg-copper hover:bg-copper-hover text-black font-black text-xs tracking-widest uppercase rounded-lg shadow-xl shadow-copper/30 transition-all active:scale-95 flex items-center gap-2"
+                  className="px-5 py-3 sm:px-7 sm:py-3.5 bg-copper hover:bg-copper-hover text-black font-black text-[11px] sm:text-xs tracking-widest uppercase rounded-lg shadow-xl shadow-copper/30 transition-all active:scale-95 flex items-center gap-2"
                 >
                   <span>EXPLORE THE COLLECTION</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
                 <Link
                   to="/catalog"
-                  className="px-6 py-3.5 bg-white/[0.04] hover:bg-white/[0.08] text-white font-bold text-xs tracking-widest uppercase rounded-lg border border-white/10 hover:border-copper/40 transition-colors"
+                  className="px-4 py-3 sm:px-6 sm:py-3.5 bg-white/[0.04] hover:bg-white/[0.08] text-white font-bold text-[11px] sm:text-xs tracking-widest uppercase rounded-lg border border-white/10 hover:border-copper/40 transition-colors"
                 >
                   SHOP CATALOGUE
                 </Link>

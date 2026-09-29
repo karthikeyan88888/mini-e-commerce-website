@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShoppingBag, ShieldCheck, Truck, CheckCircle2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { getProductImageUrl, getCategoryFallback } from '../utils/productImages';
 
 export const CartPage: React.FC = () => {
   const { cart, updateQuantity, removeItem, clearCart, isLoading } = useCart();
@@ -90,9 +91,16 @@ export const CartPage: React.FC = () => {
               <div className="flex items-center gap-4">
                 <Link to={`/products/${item.productId}`} className="flex-shrink-0">
                   <img
-                    src={item.product?.imageUrl}
+                    src={getProductImageUrl(item.product)}
                     alt={item.product?.name}
                     className="w-20 h-20 rounded-lg object-cover bg-black/50 border border-white/10"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      const fallback = getCategoryFallback(item.product?.category);
+                      if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                        target.src = fallback;
+                      }
+                    }}
                   />
                 </Link>
                 <div>

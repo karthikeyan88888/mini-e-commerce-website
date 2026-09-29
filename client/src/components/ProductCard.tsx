@@ -4,6 +4,8 @@ import { ShoppingBag, Star, Check } from 'lucide-react';
 import { Product } from '../types';
 import { StockBadge } from './StatusBadge';
 import { useCart } from '../context/CartContext';
+import { getProductMechanic, getBadgeInfo } from '../utils/productMechanics';
+import { getProductImageUrl, getCategoryFallback } from '../utils/productImages';
 
 interface ProductCardProps {
   product: Product;
@@ -14,6 +16,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addToCart } = useCart();
   const [isAdding, setIsAdding] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
+
+  const mechanic = getProductMechanic(product);
+  const badgeInfo = getBadgeInfo(mechanic);
+  const displayCategory = product.category === 'EARBUDS' ? 'WIRELESS EARBUDS' : product.category;
+  const canonicalImageUrl = getProductImageUrl(product);
 
   const handleQuickAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -34,7 +41,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const isOutOfStock = product.stock <= 0;
 
   return (
-    <div className="group relative bg-[#0e0f13] border border-white/[0.08] hover:border-copper/50 rounded-lg overflow-hidden flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-black/80 hover:-translate-y-1">
+    <div className="group relative bg-[#0e0f13] border border-white/[0.08] hover:border-copper/50 rounded-xl overflow-hidden flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-black/80 hover:-translate-y-1">
       {/* 1. Large Product Image with Overlay Badges */}
       <div>
         <Link
@@ -42,10 +49,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           className="block relative aspect-square sm:aspect-[4/3] bg-[#141519] overflow-hidden"
         >
           <img
-            src={product.imageUrl}
+            src={canonicalImageUrl}
             alt={product.name}
             className="w-full h-full object-cover object-center group-hover:scale-[1.04] transition-transform duration-500 ease-out"
             loading="lazy"
+            onError={(e) => {
+              const target = e.currentTarget;
+              const fallback = getCategoryFallback(product.category);
+              if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                target.src = fallback;
+              }
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0e0f13] via-transparent to-black/30 opacity-75 pointer-events-none" />
 
@@ -54,15 +68,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <StockBadge stock={product.stock} />
           </div>
 
-          {/* Category & 3D Badges Overlay (Top Right) */}
-          <div className="absolute top-3.5 right-3.5 z-10 flex items-center gap-1.5">
-            {product.has3DModel && (
-              <span className="bg-copper/25 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-mono font-black text-copper tracking-wider border border-copper/50 shadow-sm">
-                3D
+          {/* Interaction & Category Badges Overlay (Top Right) */}
+          <div className="absolute top-3.5 right-3.5 z-10 flex flex-col items-end gap-1.5">
+            {badgeInfo && (
+              <span
+                className={`backdrop-blur-md px-2.5 py-0.5 rounded text-[10px] font-mono font-black tracking-wider border shadow-sm ${badgeInfo.badgeClass}`}
+              >
+                [{badgeInfo.label}]
               </span>
             )}
-            <div className="bg-black/75 backdrop-blur-md px-2.5 py-1 rounded text-[10px] font-mono font-bold text-white/90 uppercase tracking-widest border border-white/10">
-              {product.category}
+            <div className="bg-black/80 backdrop-blur-md px-2 py-0.5 rounded text-[9px] font-mono font-bold text-white/80 uppercase tracking-wider border border-white/10">
+              {displayCategory}
             </div>
           </div>
         </Link>

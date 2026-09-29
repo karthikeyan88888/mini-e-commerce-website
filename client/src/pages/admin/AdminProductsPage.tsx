@@ -3,12 +3,14 @@ import { Plus, Edit2, Trash2, Search, X, Check, AlertCircle, Box, Shield } from 
 import { Product } from '../../types';
 import { StockBadge } from '../../components/StatusBadge';
 import { api } from '../../api/client';
+import { getProductImageUrl, getCategoryFallback } from '../../utils/productImages';
 
 export const AdminProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [categories, setCategories] = useState<string[]>(['All', 'HEADPHONES', 'IEM', 'AMPLIFICATION', 'ACCESSORIES', 'ACOUSTICS']);
+  const [categories, setCategories] = useState<string[]>(['All', 'HEADPHONES', 'EARBUDS']);
+  const [showArchived, setShowArchived] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modal State
@@ -21,12 +23,12 @@ export const AdminProductsPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: 'HEADPHONES',
+    category: 'HEADPHONES' as 'HEADPHONES' | 'EARBUDS',
     price: 299,
     imageUrl: '',
     stock: 10,
     sku: '',
-    status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE',
+    status: 'ACTIVE' as 'ACTIVE' | 'ARCHIVED' | 'INACTIVE',
     rating: 4.9,
   });
 
@@ -35,15 +37,14 @@ export const AdminProductsPage: React.FC = () => {
     try {
       const res = await api.get('/products', {
         params: {
-          includeInactive: 'true',
+          includeInactive: showArchived ? 'true' : 'false',
           search: searchQuery.trim() || undefined,
           category: categoryFilter !== 'All' ? categoryFilter : undefined,
         },
       });
       setProducts(res.data.products || []);
-      if (res.data.categories && res.data.categories.length > 0) {
-        setCategories(['All', ...Array.from(new Set(res.data.categories as string[]))]);
-      }
+      // Categories strictly restricted to canonical active catalog: HEADPHONES and EARBUDS
+      setCategories(['All', 'HEADPHONES', 'EARBUDS']);
     } catch (err) {
       console.error('Failed to load products', err);
     } finally {
@@ -53,7 +54,7 @@ export const AdminProductsPage: React.FC = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [categoryFilter]);
+  }, [categoryFilter, showArchived]);
 
   const handleOpenAddModal = () => {
     setEditingProduct(null);
@@ -62,7 +63,7 @@ export const AdminProductsPage: React.FC = () => {
       description: '',
       category: 'HEADPHONES',
       price: 299,
-      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
+      imageUrl: '/images/products/apex-x.jpg',
       stock: 15,
       sku: `NXR-${Math.floor(100 + Math.random() * 900)}`,
       status: 'ACTIVE',
@@ -73,15 +74,17 @@ export const AdminProductsPage: React.FC = () => {
 
   const handleOpenEditModal = (p: Product) => {
     setEditingProduct(p);
+    // Ensure category is one of the supported active categories
+    const validCategory = (p.category === 'EARBUDS' || p.category === 'WIRELESS EARBUDS') ? 'EARBUDS' : 'HEADPHONES';
     setFormData({
       name: p.name,
       description: p.description,
-      category: p.category,
+      category: validCategory,
       price: p.price,
       imageUrl: p.imageUrl,
       stock: p.stock,
       sku: p.sku,
-      status: p.status,
+      status: p.status === 'ARCHIVED' || p.status === 'INACTIVE' ? 'ARCHIVED' : 'ACTIVE',
       rating: p.rating,
     });
     setIsModalOpen(true);
@@ -89,13 +92,44 @@ export const AdminProductsPage: React.FC = () => {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Field-specific validation
+    if (!formData.name || formData.name.trim().length < 2) {
+      setFeedbackMessage({ type: 'error', text: 'Hardware Model Name must be at least 2 characters long.' });
+      return;
+    }
+    if (!formData.description || formData.description.trim().length < 10) {
+      setFeedbackMessage({ type: 'error', text: 'Description must be at least 10 characters long with acoustic/engineering details.' });
+      return;
+    }
+    if (formData.category !== 'HEADPHONES' && formData.category !== 'EARBUDS') {
+      setFeedbackMessage({ type: 'error', text: 'Category must be either HEADPHONES or EARBUDS.' });
+      return;
+    }
+    if (!formData.sku || formData.sku.trim().length < 3) {
+      setFeedbackMessage({ type: 'error', text: 'SKU Identifier must be at least 3 characters long (e.g. NXR-APX-01).' });
+      return;
+    }
+    if (isNaN(formData.price) || formData.price <= 0) {
+      setFeedbackMessage({ type: 'error', text: 'Price must be a valid number greater than $0.00.' });
+      return;
+    }
+    if (isNaN(formData.stock) || formData.stock < 0) {
+      setFeedbackMessage({ type: 'error', text: 'Inventory quantity cannot be negative.' });
+      return;
+    }
+    if (!formData.imageUrl || formData.imageUrl.trim().length === 0) {
+      setFeedbackMessage({ type: 'error', text: 'Product photography image URL or path is required.' });
+      return;
+    }
+
     try {
       if (editingProduct) {
         await api.put(`/products/${editingProduct.id}`, formData);
         setFeedbackMessage({ type: 'success', text: `Product "${formData.name}" updated successfully` });
       } else {
         await api.post('/products', formData);
-        setFeedbackMessage({ type: 'success', text: `Product "${formData.name}" added to catalogue` });
+        setFeedbackMessage({ type: 'success', text: `Product "${formData.name}" added to active catalogue` });
       }
       setIsModalOpen(false);
       fetchProducts();
@@ -117,11 +151,11 @@ export const AdminProductsPage: React.FC = () => {
       });
       setDeleteConfirmId(null);
       fetchProducts();
-      setTimeout(() => setFeedbackMessage(null), 4000);
+      setTimeout(() => setFeedbackMessage(null), 4500);
     } catch (err: any) {
       setFeedbackMessage({
         type: 'error',
-        text: err.response?.data?.error || 'Failed to delete product',
+        text: err.response?.data?.error || 'Failed to process product deletion.',
       });
     }
   };
@@ -188,7 +222,7 @@ export const AdminProductsPage: React.FC = () => {
           </button>
         </form>
 
-        {/* Category Chips */}
+        {/* Category Chips & Archive Toggle */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {categories.map((cat) => (
             <button
@@ -203,6 +237,17 @@ export const AdminProductsPage: React.FC = () => {
               {cat}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setShowArchived(!showArchived)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold tracking-wider transition-colors border ${
+              showArchived
+                ? 'bg-zinc-800 text-copper border-copper/50'
+                : 'bg-white/[0.03] hover:bg-white/[0.08] text-white/40 border-white/10'
+            }`}
+          >
+            {showArchived ? 'ARCHIVE VIEW ON' : 'SHOW ARCHIVED'}
+          </button>
         </div>
       </div>
 
@@ -222,75 +267,90 @@ export const AdminProductsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {products.map((product) => (
-                <tr key={product.id} className="hover:bg-white/5 transition-colors">
-                  {/* Image & Title */}
-                  <td className="py-3.5 pr-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        className="w-10 h-10 rounded-lg object-cover bg-black/40 border border-white/10 flex-shrink-0"
-                      />
-                      <div className="max-w-[220px]">
-                        <span className="text-xs font-bold text-white block truncate font-headline">
-                          {product.name}
-                        </span>
-                        <span className="text-[10px] text-white/40 block truncate">
-                          {product.description}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="py-3.5 font-mono text-copper font-semibold">{product.sku}</td>
-
-                  <td className="py-3.5 text-white/80">
-                    <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] uppercase font-mono">
-                      {product.category}
-                    </span>
-                  </td>
-
-                  <td className="py-3.5 font-mono font-bold text-white">${product.price.toFixed(2)}</td>
-
-                  <td className="py-3.5">
-                    <StockBadge stock={product.stock} />
-                  </td>
-
-                  <td className="py-3.5">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
-                        product.status === 'ACTIVE'
-                          ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40'
-                          : 'bg-gray-800 text-gray-400 border border-gray-700'
-                      }`}
-                    >
-                      {product.status}
-                    </span>
-                  </td>
-
-                  {/* Actions */}
-                  <td className="py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleOpenEditModal(product)}
-                        className="p-1.5 text-white/60 hover:text-copper bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
-                        title="Edit Product"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-
-                      <button
-                        onClick={() => setDeleteConfirmId(product.id)}
-                        className="p-1.5 text-white/60 hover:text-red-400 bg-white/5 hover:bg-red-950/30 rounded-lg transition-colors"
-                        title="Remove / Safe Deactivate"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+              {products.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-white/40 font-mono text-xs">
+                    No hardware products matching the current criteria.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                products.map((product) => (
+                  <tr key={product.id} className="hover:bg-white/5 transition-colors">
+                    {/* Image & Title */}
+                    <td className="py-3.5 pr-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={getProductImageUrl(product)}
+                          alt={product.name}
+                          className="w-10 h-10 rounded-lg object-cover bg-black/40 border border-white/10 flex-shrink-0"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            const fallback = getCategoryFallback(product.category);
+                            if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                              target.src = fallback;
+                            }
+                          }}
+                        />
+                        <div className="max-w-[220px]">
+                          <span className="text-xs font-bold text-white block truncate font-headline">
+                            {product.name}
+                          </span>
+                          <span className="text-[10px] text-white/40 block truncate">
+                            {product.description}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 font-mono text-copper font-semibold">{product.sku}</td>
+
+                    <td className="py-3.5 text-white/80">
+                      <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] uppercase font-mono">
+                        {product.category}
+                      </span>
+                    </td>
+
+                    <td className="py-3.5 font-mono font-bold text-white">${product.price.toFixed(2)}</td>
+
+                    <td className="py-3.5">
+                      <StockBadge stock={product.stock} />
+                    </td>
+
+                    <td className="py-3.5">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                          product.status === 'ACTIVE'
+                            ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40'
+                            : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                        }`}
+                      >
+                        {product.status === 'ACTIVE' ? 'ACTIVE' : 'ARCHIVED'}
+                      </span>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="py-3.5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleOpenEditModal(product)}
+                          className="p-1.5 text-white/60 hover:text-copper bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+                          title="Edit Product"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          onClick={() => setDeleteConfirmId(product.id)}
+                          className="p-1.5 text-white/60 hover:text-red-400 bg-white/5 hover:bg-red-950/30 rounded-lg transition-colors"
+                          title="Remove / Safe Deactivate"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -322,7 +382,7 @@ export const AdminProductsPage: React.FC = () => {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. NEXORO Studio Reference V2"
+                  placeholder="e.g. NEXORO Apex X"
                   className="w-full px-4 py-2.5 bg-black/50 border border-white/15 rounded-xl text-white focus:outline-none focus:border-copper"
                 />
               </div>
@@ -336,7 +396,7 @@ export const AdminProductsPage: React.FC = () => {
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Detailed engineering summary..."
+                  placeholder="Detailed acoustic and engineering summary (min 10 characters)..."
                   className="w-full px-4 py-2.5 bg-black/50 border border-white/15 rounded-xl text-white focus:outline-none focus:border-copper resize-none"
                 />
               </div>
@@ -348,14 +408,11 @@ export const AdminProductsPage: React.FC = () => {
                   </label>
                   <select
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
                     className="w-full px-4 py-2.5 bg-black/50 border border-white/15 rounded-xl text-white focus:outline-none focus:border-copper"
                   >
                     <option value="HEADPHONES" className="bg-[#121317]">HEADPHONES</option>
-                    <option value="IEM" className="bg-[#121317]">IEM</option>
-                    <option value="AMPLIFICATION" className="bg-[#121317]">AMPLIFICATION</option>
-                    <option value="ACCESSORIES" className="bg-[#121317]">ACCESSORIES</option>
-                    <option value="ACOUSTICS" className="bg-[#121317]">ACOUSTICS</option>
+                    <option value="EARBUDS" className="bg-[#121317]">WIRELESS EARBUDS</option>
                   </select>
                 </div>
 
@@ -414,21 +471,21 @@ export const AdminProductsPage: React.FC = () => {
                     className="w-full px-4 py-2.5 bg-black/50 border border-white/15 rounded-xl text-white focus:outline-none focus:border-copper"
                   >
                     <option value="ACTIVE" className="bg-[#121317]">ACTIVE</option>
-                    <option value="INACTIVE" className="bg-[#121317]">INACTIVE</option>
+                    <option value="ARCHIVED" className="bg-[#121317]">ARCHIVED</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label className="block font-semibold text-white/70 uppercase tracking-wider mb-1.5">
-                  Product Photography Image URL
+                  Product Photography Image Path / URL
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   required
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="https://images.unsplash.com/..."
+                  placeholder="/images/products/apex-x.jpg"
                   className="w-full px-4 py-2.5 bg-black/50 border border-white/15 rounded-xl text-white focus:outline-none focus:border-copper"
                 />
               </div>
@@ -457,9 +514,9 @@ export const AdminProductsPage: React.FC = () => {
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-[#0e0f13] border border-red-500/30 rounded-2xl max-w-md p-6 space-y-4">
-            <h3 className="text-base font-bold font-headline text-white">Confirm Safe Deletion</h3>
+            <h3 className="text-base font-bold font-headline text-white">Confirm Safe Archival / Removal</h3>
             <p className="text-xs text-white/60 leading-relaxed">
-              If this product is associated with previous customer orders, NEXORO will safely mark it as INACTIVE to protect historical receipts.
+              If this product is associated with previous customer orders, NEXORO will safely mark it as <strong className="text-amber-400">ARCHIVED</strong> to protect historical receipts and tracking. If unreferenced, it will be removed permanently.
             </p>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button

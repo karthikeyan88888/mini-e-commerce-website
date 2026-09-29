@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { getProductImageUrl, getCategoryFallback } from '../utils/productImages';
 
 export const CartDrawer: React.FC = () => {
   const { cart, isDrawerOpen, closeDrawer, updateQuantity, removeItem, isLoading } = useCart();
@@ -73,9 +74,16 @@ export const CartDrawer: React.FC = () => {
                   className="bg-[#141518] border border-white/[0.06] rounded-xl p-3.5 flex gap-3.5 items-center"
                 >
                   <img
-                    src={item.product?.imageUrl}
+                    src={getProductImageUrl(item.product)}
                     alt={item.product?.name}
                     className="w-16 h-16 rounded-lg object-cover bg-black/40 flex-shrink-0"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      const fallback = getCategoryFallback(item.product?.category);
+                      if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                        target.src = fallback;
+                      }
+                    }}
                   />
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-semibold text-white truncate font-headline">

@@ -3,6 +3,7 @@ import { Layers, AlertTriangle, CheckCircle, Search, Save, Check, RefreshCw } fr
 import { Product } from '../../types';
 import { StockBadge } from '../../components/StatusBadge';
 import { api } from '../../api/client';
+import { getProductImageUrl, getCategoryFallback } from '../../utils/productImages';
 
 export const AdminInventoryPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -173,9 +174,16 @@ export const AdminInventoryPage: React.FC = () => {
                     <td className="py-3.5 pr-4">
                       <div className="flex items-center gap-3">
                         <img
-                          src={p.imageUrl}
+                          src={getProductImageUrl(p)}
                           alt={p.name}
                           className="w-10 h-10 rounded-lg object-cover bg-black/40 border border-white/10"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            const fallback = getCategoryFallback(p.category);
+                            if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                              target.src = fallback;
+                            }
+                          }}
                         />
                         <span className="font-bold text-white font-headline max-w-[220px] truncate block">
                           {p.name}

@@ -5,6 +5,7 @@ import { Order } from '../types';
 import { OrderStatusBadge } from '../components/StatusBadge';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
+import { getProductImageUrl, getCategoryFallback } from '../utils/productImages';
 
 export const MyOrdersPage: React.FC = () => {
   const { user } = useAuth();
@@ -137,10 +138,17 @@ export const MyOrdersPage: React.FC = () => {
                     {order.items.slice(0, 4).map((item) => (
                       <div key={item.id} className="relative group/thumb flex-shrink-0">
                         <img
-                          src={item.product?.imageUrl}
+                          src={getProductImageUrl(item.product)}
                           alt={item.product?.name || 'Product'}
                           title={item.product?.name}
                           className="w-14 h-14 rounded-lg object-cover bg-black/50 border border-white/10"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            const fallback = getCategoryFallback(item.product?.category);
+                            if (target.src !== fallback && !target.src.endsWith(fallback)) {
+                              target.src = fallback;
+                            }
+                          }}
                         />
                         <span className="absolute -bottom-1 -right-1 bg-black/80 px-1 py-0.2 text-[9px] font-mono text-white rounded border border-white/20">
                           &times;{item.quantity}

@@ -27,6 +27,7 @@ dev.db
 logs/
 *.log
 ezgif-29ffc42ee00d09bb-jpg/
+scratch/
 
 # Logs
 npm-debug.log*

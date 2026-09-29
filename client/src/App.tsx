@@ -8,6 +8,7 @@ import { AdminLayout } from './layouts/AdminLayout';
 
 import { HomePage } from './pages/HomePage';
 import { CatalogPage } from './pages/CatalogPage';
+import { CollectionsPage } from './pages/CollectionsPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
@@ -15,6 +16,7 @@ import { OrderConfirmationPage } from './pages/OrderConfirmationPage';
 import { MyOrdersPage } from './pages/MyOrdersPage';
 import { OrderTrackingPage } from './pages/OrderTrackingPage';
 import { CustomerCarePage } from './pages/CustomerCarePage';
+import { ListeningLabPage } from './pages/ListeningLabPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 
@@ -22,6 +24,7 @@ import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminProductsPage } from './pages/admin/AdminProductsPage';
 import { AdminInventoryPage } from './pages/admin/AdminInventoryPage';
 import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
+import { ScrollToTop } from './components/ScrollToTop';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,11 +41,13 @@ export const App: React.FC = () => {
       <AuthProvider>
         <CartProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               {/* Customer Commerce Routes */}
               <Route element={<MainLayout />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/catalog" element={<CatalogPage />} />
+                <Route path="/collections" element={<CollectionsPage />} />
                 <Route path="/products/:id" element={<ProductDetailPage />} />
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
@@ -51,6 +56,7 @@ export const App: React.FC = () => {
                 <Route path="/orders/:id" element={<OrderTrackingPage />} />
                 <Route path="/support" element={<CustomerCarePage />} />
                 <Route path="/customer-care" element={<CustomerCarePage />} />
+                <Route path="/nexoro-listening-lab" element={<ListeningLabPage />} />
               </Route>
 
               {/* Auth Routes */}

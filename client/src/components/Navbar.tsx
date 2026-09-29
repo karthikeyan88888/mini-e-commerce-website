@@ -27,10 +27,34 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { label: 'Overview', href: '/' },
     { label: 'Shop', href: '/catalog' },
-    { label: 'Collections', href: '/catalog?category=HEADPHONES' },
+    { label: 'Collections', href: '/collections' },
+    { label: 'Listening Lab', href: '/nexoro-listening-lab' },
     { label: 'Support', href: '/support' },
     { label: 'My Orders', href: '/orders' },
   ];
+
+  const isLinkActive = (href: string) => {
+    const pathname = location.pathname;
+    if (href === '/') {
+      return pathname === '/';
+    }
+    if (href === '/catalog') {
+      return pathname === '/catalog' || pathname.startsWith('/products/');
+    }
+    if (href === '/collections') {
+      return pathname.startsWith('/collections');
+    }
+    if (href === '/nexoro-listening-lab') {
+      return pathname.startsWith('/nexoro-listening-lab');
+    }
+    if (href === '/support') {
+      return pathname.startsWith('/support') || pathname.startsWith('/customer-care');
+    }
+    if (href === '/orders') {
+      return pathname.startsWith('/orders') || pathname.startsWith('/order-confirmation');
+    }
+    return pathname === href;
+  };
 
   return (
     <header
@@ -40,32 +64,32 @@ export const Navbar: React.FC = () => {
           : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent py-5 border-b border-white/[0.04]'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 flex items-center justify-between gap-3 sm:gap-4">
         {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-3 group">
+        <Link to="/" className="flex items-center gap-2.5 sm:gap-3 group flex-shrink-0">
           <div className="w-8 h-8 rounded bg-gradient-to-br from-copper to-bronze flex items-center justify-center font-extrabold text-black text-sm font-headline shadow-lg shadow-copper/20 group-hover:scale-105 transition-transform duration-300">
             N
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col justify-center">
             <span className="text-xl font-black font-headline tracking-[0.22em] text-white group-hover:text-champagne transition-colors leading-none">
               NEXORO
             </span>
-            <span className="text-[8px] font-mono tracking-[0.25em] text-copper uppercase mt-0.5">
+            <span className="text-[8px] font-mono tracking-[0.25em] text-copper uppercase mt-0.5 leading-none">
               ELECTROACOUSTICS
             </span>
           </div>
         </Link>
 
         {/* Center: Editorial Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-9">
+        <nav className="hidden lg:flex items-center gap-3.5 xl:gap-6 2xl:gap-8 flex-shrink-0">
           {navLinks.map((link) => {
-            const isActive = location.pathname === link.href;
+            const isActive = isLinkActive(link.href);
             return (
               <Link
                 key={link.label}
                 to={link.href}
-                className={`text-xs font-bold uppercase tracking-[0.18em] transition-all relative py-1 ${
-                  isActive ? 'text-copper' : 'text-white/70 hover:text-white'
+                className={`text-[11px] xl:text-xs font-bold uppercase tracking-[0.12em] xl:tracking-[0.18em] transition-all relative py-1 whitespace-nowrap select-none ${
+                  isActive ? 'text-copper font-black' : 'text-white/70 hover:text-white'
                 }`}
               >
                 {link.label}
@@ -78,21 +102,21 @@ export const Navbar: React.FC = () => {
         </nav>
 
         {/* Right Actions: Search, Cart, Profile, Admin Panel */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {/* Search trigger */}
           <Link
             to="/catalog"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-copper/40 text-white/70 hover:text-white transition-all text-xs"
+            className="flex items-center gap-2 p-2 sm:px-3 sm:py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-copper/40 text-white/70 hover:text-white transition-all text-xs"
             title="Search Catalogue"
           >
-            <Search className="w-3.5 h-3.5 text-copper" />
-            <span className="hidden sm:inline-block font-mono text-[11px] text-white/50">Search</span>
+            <Search className="w-3.5 h-3.5 text-copper flex-shrink-0" />
+            <span className="hidden xl:inline-block font-mono text-[11px] text-white/50">Search</span>
           </Link>
 
           {/* Cart Button */}
           <button
             onClick={openDrawer}
-            className="relative p-2.5 text-white/80 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] rounded-xl border border-white/[0.08] hover:border-copper/50 transition-all active:scale-95 flex items-center justify-center group"
+            className="relative p-2 sm:p-2.5 text-white/80 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] rounded-xl border border-white/[0.08] hover:border-copper/50 transition-all active:scale-95 flex items-center justify-center group cursor-pointer flex-shrink-0"
             aria-label="View Shopping Cart"
           >
             <ShoppingBag className="w-4 h-4 group-hover:text-copper transition-colors" />
@@ -108,12 +132,12 @@ export const Navbar: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-copper/40 transition-all text-xs text-white"
+                className="flex items-center gap-2 px-2 sm:px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-copper/40 transition-all text-xs text-white cursor-pointer"
               >
-                <div className="w-5 h-5 rounded-full bg-copper/20 border border-copper text-copper font-bold flex items-center justify-center text-[10px]">
+                <div className="w-5 h-5 rounded-full bg-copper/20 border border-copper text-copper font-bold flex items-center justify-center text-[10px] flex-shrink-0">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
-                <span className="hidden sm:inline-block font-medium max-w-[90px] truncate text-[11px]">
+                <span className="hidden sm:inline-block font-medium max-w-[75px] xl:max-w-[100px] truncate text-[11px] whitespace-nowrap">
                   {user.name}
                 </span>
               </button>
@@ -173,16 +197,16 @@ export const Navbar: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Link
                 to="/login"
-                className="px-3.5 py-1.5 text-xs font-bold tracking-[0.15em] uppercase text-white/80 hover:text-copper transition-colors"
+                className="px-2.5 sm:px-3.5 py-1.5 text-xs font-bold tracking-[0.15em] uppercase text-white/80 hover:text-copper transition-colors whitespace-nowrap"
               >
                 LOGIN
               </Link>
               <Link
                 to="/register"
-                className="hidden sm:inline-flex px-3.5 py-1.5 bg-copper hover:bg-copper-hover text-black text-xs font-black tracking-[0.15em] uppercase rounded-lg shadow-md shadow-copper/20 transition-all active:scale-95"
+                className="hidden sm:inline-flex px-3 sm:px-3.5 py-1.5 bg-copper hover:bg-copper-hover text-black text-xs font-black tracking-[0.15em] uppercase rounded-lg shadow-md shadow-copper/20 transition-all active:scale-95 whitespace-nowrap"
               >
                 JOIN
               </Link>
@@ -193,17 +217,18 @@ export const Navbar: React.FC = () => {
           {isAdmin && (
             <Link
               to="/admin/dashboard"
-              className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold text-copper bg-copper/10 border border-copper/30 hover:bg-copper/20 hover:border-copper transition-colors"
+              className="hidden lg:inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold text-copper bg-copper/10 border border-copper/30 hover:bg-copper/20 hover:border-copper transition-colors whitespace-nowrap flex-shrink-0"
             >
-              <Shield className="w-3 h-3" />
-              <span>ADMIN PANEL</span>
+              <Shield className="w-3 h-3 flex-shrink-0" />
+              <span className="hidden xl:inline">ADMIN PANEL</span>
+              <span className="xl:hidden">ADMIN</span>
             </Link>
           )}
 
           {/* Mobile Menu Trigger */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 text-white/70 hover:text-white bg-white/5 rounded-lg"
+            className="lg:hidden p-2 text-white/70 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors cursor-pointer flex-shrink-0"
             aria-label="Toggle navigation menu"
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -214,16 +239,21 @@ export const Navbar: React.FC = () => {
       {/* Mobile Drawer */}
       {isMobileMenuOpen && (
         <div className="lg:hidden bg-[#070707] border-b border-white/10 px-6 py-5 space-y-3 animate-fade-in">
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              to={link.href}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block text-xs font-bold uppercase tracking-[0.18em] text-white/80 hover:text-copper py-1.5"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = isLinkActive(link.href);
+            return (
+              <Link
+                key={link.label}
+                to={link.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`block text-xs font-bold uppercase tracking-[0.18em] py-1.5 transition-colors ${
+                  isActive ? 'text-copper font-black' : 'text-white/80 hover:text-copper'
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
           {isAdmin && (
             <Link
               to="/admin/dashboard"

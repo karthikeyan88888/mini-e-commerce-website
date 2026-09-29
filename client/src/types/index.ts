@@ -8,7 +8,7 @@ export interface User {
   createdAt: string;
 }
 
-export type ProductStatus = 'ACTIVE' | 'INACTIVE';
+export type ProductStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 
 export interface Product {
   id: string;
